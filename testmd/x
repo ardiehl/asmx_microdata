@@ -1,0 +1,3 @@
+#!/bin/sh
+#../src/asmx -C MD1600 -l -s9 -e -w test.asm
+../src/asmx -l -s9 -e -w test.asm

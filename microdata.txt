@@ -1,0 +1,75 @@
+Operant adressing modes
+=======================
+
+The use of m=0, m=1 will be determined based on given address
+
+Direct page 0 (m=0)
+Direct relative (m=1)
+JMP 0ffh
+LDA [0ffh]
+
+Force of Direct relative (m=1)
+JMP .+Addr
+LDA [.+05h]
+LDA [.-05h]
+
+Indirect page 0 (m=2)
+Indirect relative (m=3)
+JMP [addr]
+JMP* addr
+LDA [*addr]
+LDA* addr
+
+Force of Indirect relative (m=3)
+JMP .+[addr]
+LDA .+[*addr]
+
+Indexed (m=4)
+JMP  X
+JMPX
+JMP-
+LDA  [X]
+LDA-
+LDAX
+
+Indexed with bias (m=5)
+JMP X+addr
+JMPX addr
+JMP+ addr
+LDA [X+addr]
+LDAX [addr]
+LDA+ addr
+
+Extended address (m=6), bit 7 of addr = 0)
+JMP addr
+JMP/ addr
+LDA [addr]
+LDA/ addr
+
+Extended address (m=6), bit 7 of addr = 1)
+JMP X+addr
+LDA X+[addr]
+
+Literal (m=7) - not for Jump and Return Jump
+LDA 7afeh
+LDA= 7ffeH
+
+Jump/Return Jump: Indirect Extended ddress (m=7), bit 15=0
+JMP [addr]
+JMP= addr
+
+Jump/Return Jump: Indirect Extended Address (m=7), bit 15=1
+JMP [X+addr]
+
+
+??????????????
+how to handle LDV ???
+
+Some commands depend on the word length set by RO1,RO2,RO3,RO4 or SO1,SO2,SO3,SO4. The assembler 
+can not know the word length set so the following pseudo commands need to be used
+.W1
+.W2
+.W3
+.W4
+for seeting the word length. Depending on W1..W4, the corrosponding number of bytes will be
+generated for the variable commands

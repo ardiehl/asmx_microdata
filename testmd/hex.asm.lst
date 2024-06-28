@@ -1,0 +1,59 @@
+
+
+                        ; Pseude code
+0000                    		.CPU	MD1600
+0200                    		ORG	0200h
+0200                    		OLDSYN	0
+
+0200  66 0239           		JMP	Main
+
+                        ;	SUBR charOut
+0203  39 00             charOut:	OBA	0,0		; for basic four 210, other address for the 510
+                        					; how to check for transmit empty, for now delay for a while
+0205  57                		PUSHB
+0206  97 D000           		LDB	D000h		; delay count
+0209  49                .charOutDelay:	INB			; increment B
+020A  1A FD             		NBZ	.charOutDelay
+020C  56                		POPB
+020D  50                		RTN
+
+020E  55                crlf:		PUSHA
+020F  E7 000D           		LDA	0x0D
+0212  51 0203           		CALL	charOut
+0215  E7 000A           		LDA	0x0A
+0218  51 0203           		CALL	charOut
+021B  54                		POPA
+021C  50                		RTN
+
+
+021D  CF 09             nibOut:		CPV	09H		; assumed word size is set to 1, A<OP
+021F  61 09             		JR	.nibOut2		; CPV jumps here if A<OP
+0221  61 00             		JR	.NibOutP		; and here if A=OP
+                        					; and here if A>OP
+0223  AF 39             .nibOutP:	ADV	'9'
+0225  51 0203           		CALL	charOut		
+0228  61 D9             		JR	charOut
+022A  AF 08             .nibOut2:	ADV	'A'-'9'
+022C  61 D5             		JR	charOut
+
+
+                        ; print bex byte of A
+022E  55                hexOut		PushA
+022F  24 04             		LRA	4
+0231  51 021D           		CALL	nibOut
+0234  54                		PopA
+0235  51 021D           		CALL	nibOut
+0238  50                		RTN
+
+0239  EF F0             Main:		LDV	0f0h
+023B  51 022E           		CALL	hexOut
+023E  EF 19             		LDV	019h
+0240  51 022E           		CALL	hexOut
+0243  51 020E           		CALL	crlf
+0246  00                		HLT
+
+00000 Total Error(s)
+
+CHAROUT            00000203    CHAROUT.CHAROUTDELAY                          00000209
+CRLF               0000020E    HEXOUT             0000022E    MAIN               00000239
+NIBOUT             0000021D    NIBOUT.NIBOUT2     0000022A    NIBOUT.NIBOUTP     00000223

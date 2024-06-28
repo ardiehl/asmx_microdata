@@ -1,0 +1,6 @@
+#!/bin/sh
+make clean
+make CC=i686-w64-mingw32-gcc || exit 1
+mv -f asmx asmx.exe
+echo "done"
+ls -l asmx.exe

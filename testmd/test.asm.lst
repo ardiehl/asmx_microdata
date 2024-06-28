@@ -1,0 +1,94 @@
+                        ; dont put the dot commands to the first column
+0000                        .CPU MD1600
+                        ; use .org or ORG but ORG must mot be at first column
+0200                        .ORG 200h
+                        ; OLDSYN enabled the 'old' chars appended to opcodes
+0200                        OLDSYN 1
+
+0200  04                Start:  	DIN
+0201  E0 FF             lab1:		LDA PAGE0 [ffh]		; m=0, direct page 0
+0203  E1 8D             		LDA SHORT [0x190]		; m=1
+0205  E1 FB             		LDA SHORT [Start]	; m=1, direct relative
+0207  E2 01             		LDA	[*1]		; m=2, indirect page 0, SHORT not needed
+0209  E3 F7             		LDA	[*Start]	; m=3, indirect relative, SHORT not needed
+020B  E4                		LDA	[X]		; m=4, indexed
+020C  E6 8012           lab2		LDA	[X+12h]		; m=5, indexed with bias
+020F  E6 7EF0           		LDA	[7ef0h]		; m=6, extended address, x=0
+0212  E6 FEF0           		LDA	[X+0x7ef0]	; m=6, extended address, x=1
+0215  E7 7F91           lab3		LDA	7F91h		; m=7 literal
+
+                        		; Jump and Return Jump
+0218  61 E8             lab4:		JMP	short 200h	; m=0, direct page 0
+021A  66 0200           		JMP	200h
+021D  61 FB             lab4_1:		JMP SHORT Lab4		; m=1, direct relative
+                        ;		JMP SHORT TheEnd	; error
+021F  62 01             lab4_2:		JMP	[1]		; m=2, indirect page 0
+0221  63 DF             lab5:		JMP	[Start]		; m=3, indirect relative
+0223  64                		JMP	X		; m=4, indexed
+0224  66 8012           		JMP	X+12h		; m=5, indexed with bias
+0227  66 7EF0           lab6:		JMP	7ef0h		; m=6, extended address, x=0
+022A  66 FEF0           		JMP	X+0x7ef0	; m=6, extended address, x=1
+022D  67 FF91           		JMP	X+[$7F91]	; m=7, indirect extended, x=1
+0230  67 7F91           lab7:		JMP	[7F91H]		; m=7, indirect extended, x=0
+0233  10 00             		JOV	nxt		; should be zero
+0235  10 00             nxt:		JOV	*+2		; zero as well, does NOT WORK if old sytax is enabled, will be interpreted as JOV*
+0237  10 00             		JOV*	+2
+
+                        	; variable length
+0239  AF FF             		ADV	ffffh		; this is only one byte as this is the default after reset
+023B                    		.W2
+023B  AF 1234           		ADV	1234h		; two bytes
+023E                    		.W3
+023E  AF 123456         		ADV	123456h		; tree bytes
+0242                    		.W4
+0242  AF 12345678       		ADV	12345678h	; four bytes
+0247                    		.W1
+0247  AF 12             		ADV	1,12h
+0249  AF 1224           		ADV	2,1224h
+024C  AF 123456         		ADV	3,123456h
+0250  AF 12345678       		ADV	4,12345678h
+
+                        	; old style
+                        	; underscore instead of blank
+0255  60 00             		JMP_	0		; m=0
+0257  61 02             		JMP_	*+2		; m=1
+0259  62 00             		JMP*	0		; m=2
+025B  63 02             		JMP*	*+2		; m=3
+025D  64                		JMP-			; m=4
+025E  65 12             		JMP+	12h		; m=5
+0260  6E 1000           		RTJ/	TheEnd		; m=6
+0263  66 9000           		JMP/	TheEnd,X	; m=6, x=1
+0266  6F 1000           		RTJ=	TheEnd		; m=7
+0269  67 9000           		JMP=	TheEnd,X	; m=7, x=1
+
+026C  70 00             		IWM_	0		; m=0
+026E  79 02             		DWM_	*+2		; m=1
+0270  82 00             		LDX*	0		; m=2
+0272  8B 02             		STX*	*+2		; m=3
+0274  94                		LDB-			; m=4
+0275  9D 12             		STB+	12h		; m=5
+0277  A6 1000           		ADA/	TheEnd		; m=6
+                        ;		ADV/	TheEnd,X	; m=6, x=1
+                        ;		SBA=	TheEnd		; m=7
+
+
+027A  00                                HLT
+                        	; DB/DS must not start @ col 1
+027B  00000000 00000000 		DB		0,0,0,0,0,0,0,0
+0283  00000000 00       		DS		5,0
+0288  5353              		DS		2,'S'
+028A  53746163 6B537461 		DB		"StackStackStackStack"
+0292  636B5374 61636B53
+029A  7461636B
+029E   (0001)           		DS 1
+1000                     ORG 1000h
+1000                    TheEnd:
+
+
+
+00000 Total Error(s)
+
+LAB1               0201    LAB2               020C    LAB3               0215
+LAB4               0218    LAB4_1             021D    LAB4_2             021F
+LAB5               0221    LAB6               0227    LAB7               0230
+NXT                0235    START              0200    THEEND             1000
