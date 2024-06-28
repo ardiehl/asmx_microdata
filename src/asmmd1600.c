@@ -59,16 +59,16 @@ struct OpcdRec MD1600_opcdTab[] =
     
     {"HLT", o_None,     0x00},
     {"TRP", o_None,     0x01},
-    
-    {"ESW", o_None,     0x03},  // is it 02 or 03, 71-1-821-001_1600-21_Aug71=03, 1600_30.pdf=02, need to be tested
+    {"ESW", o_None,	0x02}, 
+    {"TBA", o_None,     0x03},
     {"DIN", o_None,     0x04},
     {"EIN", o_None,     0x05},
     {"DRT", o_None,     0x06},
     {"ERT", o_None,     0x07},
     {"RO1", o_None,     0x08},
-    {"RO2", o_None,     0x09},
-    {"RO3", o_None,     0x0A},
-    {"RO4", o_None,     0x0B},
+    {"RO2", o_None,     0x09},	// SMT (String mult by 10) on BasicFour 1320 CPU
+    {"RO3", o_None,     0x0A},	// 1200 only, GNB (Get Next Byte) on 13xx CPUs)
+    {"RO4", o_None,     0x0B},	// 1200 only, PJI (Push P and Jump on 13xx CPUs)
     {"SO1", o_None,     0x0C},
     {"SO2", o_None,     0x0D},
     {"SO3", o_None,     0x0E},
