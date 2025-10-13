@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="asmx" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="default">
+				<Option output="asmx" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-Og" />
+			<Add option="-g" />
+		</Compiler>
+		<Unit filename="asm1802.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm6502.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm6805.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm6809.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm68hc11.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm68hc16.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm68k.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm8048.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm8051.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asm8085.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asmarm.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asmf8.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asmjag.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asmmd1600.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asmthumb.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asmx.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="asmx.h" />
+		<Unit filename="asmz80.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>

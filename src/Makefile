@@ -11,7 +11,7 @@ VERSION = 2.0b5ad
 #TARGET_ARCH = -arch ppc -arch i686
 
 # C compiler flags
-CFLAGS = -Wall -O2 -DVERSION=\"$(VERSION)\"
+CFLAGS = -Wall -O2 -DVERSION=\"$(VERSION)\" --std=gnu99
 
 # install directory in ~/bin or wherever you want it
 INSTALL_DIR = ~/bin
@@ -23,6 +23,8 @@ OBJS := $(patsubst %.c,%.o,$(wildcard *.c))
 
 .PHONY: all
 all: asmx
+
+default: asmx
 
 asmx: $(OBJS)
 

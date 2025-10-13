@@ -1,0 +1,27 @@
+
+0000                    	.CPU MD1600
+                        ; use .org or ORG but ORG must mot be at first column
+0200                    	.ORG 200h
+
+                        ; LDV with m=7 depends on the "variable precition mode" (R01..R04)
+                        ; seems to be 1 (=8 bit) after reset
+
+0200  04                Start:  	DIN		        ; 04        Disable interrupts
+0201  87 FFBF           		LDX	FFBFh	    ; 87FFBF    X=FFBF
+0204  EF AF             		LDV	AFh     	; EFAF      Load variable, A=AF, Sets bit 8..15=bit7 => FFAF
+                                                        ;           w/o bit 7=2F 2F+1='0'
+0206  48                Loop:           INA     		; 48        inc A
+0207  39 00             		OBA 0    		; 3900      output byte from A to port 0, dev=0(bit 0..4)
+0209  97 D000           		LDB	D000h	    ; 97D000    Reg B=D000
+020C  49                DelayB:		INB		        ; 49        increment B
+020D  1A FD             		NBZ	DelayB  	; 1ADF      -3 Jump relative if B not equal to 0
+020F  1F F5             		NAX	Loop	    ; 1FF5      -11 Jump relative if A <> X
+
+                        ;		JMP Start	    ; 660200 repeat loop
+0211  00                		HLT             ; 00
+
+                        	
+
+00000 Total Error(s)
+
+DELAYB             020C    LOOP               0206    START              0200
