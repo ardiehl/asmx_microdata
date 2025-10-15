@@ -18,8 +18,8 @@
 #include <errno.h>
 
 #define VERMAJ 1
-#define VERMIN 1
-#define MYSELF "Microdata 1600/21,821, Basic Four 1200,1300 and 1320 disassembler %d.%02d, Armin Diehl <ad@ardiehl.de> October 13, 2025 (%s)\n"
+#define VERMIN 2
+#define MYSELF "Microdata 1600/21,821, Basic Four 1200,1300 and 1320 disassembler %d.%02d, Armin Diehl <ad@ardiehl.de> October 15, 2025 (%s)\n"
 
 // Microdata only (not Basic Four)
 #define CPU1600 1
@@ -591,7 +591,7 @@ void usage (char *prgName) {
       " --old           old opcode format\n" \
       " -a\n" \
       " --asmout        omit address and hexdump of command\n" \
-      " -d --data       addr(hex),numBytes(hex)[,comment] specify data" \
+      " -d --data       addr(hex),numBytes(hex)[,comment] specify data\n" \
       " -M --cpumd      Microdata 800/1600 CPU\n" \
       " -B --cpu1200    Basic Four 1200 CPU (default)\n" \
       " -C --cpu1300    Basic Four 1300 CPU\n" \
@@ -613,6 +613,16 @@ const char * cpuTxt() {
 		case CPU1200: return "Basic Four 1200";
 		case CPU1300: return "Basic Four 1300";
 		case CPU1320: return "Basic Four 1320";
+		default: return "Unknown";
+	}
+}
+
+const char * cpuTxtA() {
+	switch (cpu) {
+		case CPU1600: return "MD1600";
+		case CPU1200: return "BF1200";
+		case CPU1300: return "BF1300";
+		case CPU1320: return "BF1320";
 		default: return "Unknown";
 	}
 }
@@ -1099,7 +1109,7 @@ void processFile(char *fileName) {
               //printf("org %04x\n",org);
               if (firstAddr) {
 				  if (assemblerOut) {
-					  printf(" .CPU MD1600\n"); // FIXME
+					  printf(" .CPU %s\n",cpuTxtA());
 					  printf(" ORG 0x%04x\n",currAddr);
 				  }
 			  }

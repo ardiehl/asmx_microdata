@@ -1,6 +1,10 @@
 #!/bin/sh
-make clean
-make CC=i686-w64-mingw32-gcc || exit 1
-mv -f asmx asmx.exe
+make -s clean
+make CC="x86_64-w64-mingw32-gcc -mconsole" || exit 1
+mv -f asmx.exe asmx64.exe || exit 1
+make -s clean
+make CC="i686-w64-mingw32-gcc -mconsole" || exit 1
+make -s clean
+mv -f asmx.exe asmx64.exe .. || exit 1
 echo "done"
-ls -l asmx.exe
+ls -l ../*.exe

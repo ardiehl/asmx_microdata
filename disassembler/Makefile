@@ -1,18 +1,32 @@
 TARGET = md_dis
 LIBS = -lm
+ifndef CC
 CC = gcc
-CFLAGS = -g0 -Os -Wall -g
+endif
+CFLAGS += -g0 -Os -Wall -g
+ifndef EXE
 EXE = $(TARGET)
+endif
+
+ifndef ARCH
+ARCH = $(shell $(CC) -dumpmachine)
+endif
+
+OBJDIR = obj-$(ARCH)
 
 .PHONY: default all clean
 
 default: $(TARGET)
 all: default
 
-OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
+OBJECTS = $(patsubst %.c, $(OBJDIR)/%.o, $(wildcard *.c))
 HEADERS = $(wildcard *.h)
 
-%.o: %.c $(HEADERS)
+#create obj dirs
+$(OBJDIR):
+	@mkdir -p $(OBJDIR)
+
+$(OBJDIR)/%.o: %.c $(HEADERS) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PRECIOUS: $(TARGET) $(OBJECTS)
@@ -21,5 +35,5 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -Wall $(LIBS) -o $(EXE)
 
 clean:
-	-rm -f *.o
-	-rm -f $(TARGET)
+	-rm -f $(OBJECTS)
+	-rm -f $(EXE)

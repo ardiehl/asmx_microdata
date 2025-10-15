@@ -1,4 +1,6 @@
 #!/bin/sh
-GCC=i686-w64-mingw32-gcc
-make clean
-make CC=$GCC EXE=md_dis.exe && make clean all
+GCC32="i686-w64-mingw32-gcc -mconsole"
+GCC64="x86_64-w64-mingw32-gcc -mconsole"
+
+make CC="$GCC32" EXE=md_dis.exe clean all || exit 1
+make CC="$GCC64" EXE=md_dis64.exe clean all
