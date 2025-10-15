@@ -1025,8 +1025,13 @@ void processOpcode() {
           break;
         case o_inout:
           param = get8();
-          param2 = (param & 0xe0) >> 5;
-          param1 = param & 0x1f;
+          if (cpu != CPU1600) { // AD 15.10.2025: looks like basic four is using 4 bit function code and 4 bit device address
+				param2 = (param & 0xf0) >> 4;
+				param1 = param & 0x0f;
+          } else {
+				param2 = (param & 0xe0) >> 5;
+				param1 = param & 0x1f;
+          }
           if (oldFmt) {
 			  sprintf(params,"X'%02x',X'%02x'",param2,param1);
 		  } else {

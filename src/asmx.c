@@ -1487,7 +1487,7 @@ MacroPtr NewMacro(char *name)
 
     return p;
 }
-    
+
 
 MacroPtr AddMacro(char *name)
 {
@@ -1499,7 +1499,7 @@ MacroPtr AddMacro(char *name)
 
     return p;
 }
-    
+
 
 void AddMacroParm(MacroPtr macro, char *name)
 {
@@ -2887,9 +2887,9 @@ void write_trsdos(u_long addr, u_char *buf, u_long len, int rectype)
 void write_microdata(u_long addr, u_char *buf, u_long len, int rectype)
 {
     int i;
-    
+
     if (rectype != REC_DATA) return;
-    
+
     // print address
     fprintf(object,"%.4lX", addr & 0xFFFF);
 
@@ -5308,7 +5308,7 @@ void getopts(int argc, char * const argv[])
                 else usage();
                 cl_ObjType = OBJ_S9;
                 break;
-                
+
             case 'm':
                 cl_ObjType = OBJ_MICRODATA;
                 strcpy(defCPU, "MD1600");
@@ -5424,8 +5424,14 @@ void getopts(int argc, char * const argv[])
                 Uprcase(word);
                 if (!FindCPU(word))
                 {
-                    fprintf(stderr,"CPU type '%s' unknown\n",word);
-                    usage();
+                    fprintf(stderr,"CPU type '%s' unknown\nSupported CPU types are:\n",word);
+                    //usage();
+                    CpuPtr p = cpuTab;
+					while (p) {
+					  printf("%-12s (%s)\n", p->name,p->as->name);
+					  p = p -> next;
+					}
+                    exit(1);
                 }
                 strcpy(defCPU, word);
                 break;
@@ -5476,7 +5482,7 @@ void getopts(int argc, char * const argv[])
                 strncpy(cl_ObjName, cl_SrcName, 255-3);
                 strcat (cl_ObjName, ".boot");
                 break;
-                
+
             case OBJ_S9:
                 strncpy(cl_ObjName, cl_SrcName, 255-3);
                 sprintf(word,".s%d",cl_S9type);

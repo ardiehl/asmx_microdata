@@ -2,8 +2,9 @@
 // Microdata 821/1600/MAI Basic Four 13xx
 // Armin Diehl 09/2015
 
-#define versionNameMD "Microdata 821 and 1600 assembler"
-#define versionNameBF "Basic Four 1200,1300 and 1320 assembler"
+#define version "1.02"
+#define versionNameMD "Microdata 821 and 1600 assembler " version
+#define versionNameBF "Basic Four 1200,1300 and 1320 assembler " version
 #include "asmx.h"
 
 #define ERRPAR_FF Warning("Address / parameter should be in the range of 0 to ffh")
@@ -1005,9 +1006,15 @@ int MD1600_DoCPUOpcode(int typ, int parmIn)
             val = Eval();
             if (checkOptionalKeyword(",")) { // , is optional
 				val2 = Eval();
-                val = val & 0x1f;  // device only
-                val2 = (val2 & 0x07) << 5;
-                val = val | val2;
+				if (curCPU == CPU1600) {
+					val = val & 0x1f;  // device only
+					val2 = (val2 & 0x07) << 5;
+					val = val | val2;
+				} else {	// AD 15.10.2025: looks like basic four is using 4 bit function code and 4 bit device address
+					val = val & 0x0f;  // device only
+					val2 = (val2 & 0x0f) << 4;
+					val = val | val2;
+				}
             }
             InstrBB(parm, val);
             break;
@@ -1018,9 +1025,15 @@ int MD1600_DoCPUOpcode(int typ, int parmIn)
             val = Eval();
             Expect(",");
             val2 = Eval();
-            val = val & 0x1f;  // device only
-            val2 = (val2 & 0x07) << 5;
-            val = val | val2;
+            if (curCPU == CPU1600) {
+				val = val & 0x1f;  // device only
+				val2 = (val2 & 0x07) << 5;
+				val = val | val2;
+            } else {
+            	val = val & 0x0f;  // device only
+				val2 = (val2 & 0x0f) << 4;
+				val = val | val2;
+            }
             Expect(",");
             val2 = Eval();  // address
             if (checkOptionalKeyword(",")) { // ,X is optional
