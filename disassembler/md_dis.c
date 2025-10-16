@@ -5,6 +5,10 @@
  * 08.10.2015 ad: allow comments as well 0x0a as line terminator in bf boot files
  * 13.10.2025 ad: added missing opcodes for Basic Four 1200 (looks like there are some more opcodes as in the Microdata 1600 docs on bitsavers
  *                added support for Basic Four 1300 and 1320 CPU's
+ * 15.10.2025 ad: added missing opcode descriptions
+ *                in/out for basic four seem to has 4 bit function and device, md1600 has 3 bit function
+ * 16.10.2025 ad: added second pass to generate labels for assembler out
+ *                labels can be added via command line or file named inputFileName.labels
  *
  */
 
@@ -91,6 +95,19 @@ struct dataSpec_t {
 };
 
 dataSpec_t *dataSpec;
+
+int labelNameCounter;
+
+typedef struct label_t label_t;
+struct label_t {
+        uint16_t addr;
+        char * name;
+        char * comment;
+        int LabelInCode;	// 1 if label is within the disassembled code
+        label_t *next;
+};
+
+label_t *labels;
 
 
 struct OpcdRec* MD1600_opcdTab[256];
@@ -337,187 +354,206 @@ struct OpcdRec opcodeTable[] =
     {"GAP",   o_None,     0x5F, CPUALL ,0, "Gernerate ascii parity, src=[X] while X <= B"},
 
     /* Memory reference ops */
-    {"JMP",   o_jm0,  0x60, CPUALL ,0, "Jump direct page 0"},
-    {"JMP",   o_jm1,  0x61, CPUALL ,0, "Jump direct relative"},
-    {"JMP",   o_jm2,  0x62, CPUALL ,0, "Jump indirect page 0"},
-    {"JMP",   o_jm3,  0x63, CPUALL ,0, "Jump indirect raltive"},
-    {"JMP",   o_jm4,  0x64, CPU1216,0, "Jump indexed"},
-    {"JMP",   o_jm4,  0x64, CPU13xx,0, "Jump T-index + bias (no docs)"},
-    {"JMP",   o_jm5,  0x65, CPUALL ,0, "Jump indexed + bias"},
-    {"JMP",   o_jm6,  0x66, CPUALL ,0, "Jump extended address"},
-    {"JMP",   o_jm7,  0x67, CPUALL ,0, "Jump literal"},
+    {"JMP",   o_jm0,  0x60, CPUALL ,0, "Jump - direct page 0"},
+    {"JMP",   o_jm1,  0x61, CPUALL ,0, "Jump - direct relative"},
+    {"JMP",   o_jm2,  0x62, CPUALL ,0, "Jump - indirect page 0"},
+    {"JMP",   o_jm3,  0x63, CPUALL ,0, "Jump - indirect raltive"},
+    {"JMP",   o_jm4,  0x64, CPU1216,0, "Jump - indexed"},
+    {"JMP",   o_jm4,  0x64, CPU13xx,0, "Jump - T-index + bias (no docs)"},
+    {"JMP",   o_jm5,  0x65, CPUALL ,0, "Jump - indexed + bias"},
+    {"JMP",   o_jm6,  0x66, CPUALL ,0, "Jump - extended address"},
+    {"JMP",   o_jm7,  0x67, CPUALL ,0, "Jump - literal"},
 
-    {"RTJ",  o_jm0,  0x68, CPUALL ,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2"},
-    {"RTJ",  o_jm1,  0x69, CPUALL ,0},
-    {"RTJ",  o_jm2,  0x6A, CPUALL ,0},
-    {"RTJ",  o_jm3,  0x6B, CPUALL ,0},
-    {"RTJ",  o_jm4,  0x6C, CPUALL ,0},
-    {"RTJ",  o_jm5,  0x6D, CPUALL ,0},
-    {"RTJ",  o_jm6,  0x6E, CPUALL ,0},
-    {"RTJ",  o_jm7,  0x6F, CPUALL ,0},
+    {"RTJ",  o_jm0,  0x68, CPUALL ,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - direct page 0"},
+    {"RTJ",  o_jm1,  0x69, CPUALL ,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - direct relative"},
+    {"RTJ",  o_jm2,  0x6A, CPUALL ,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - indirect page 0"},
+    {"RTJ",  o_jm3,  0x6B, CPUALL ,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - indirect relative"},
+    {"RTJ",  o_jm4,  0x6C, CPU1216,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - indexed"},
+    {"RTJ",  o_jm4,  0x6C, CPU13xx,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - T-index + bias (no docs)"},
+    {"RTJ",  o_jm5,  0x6D, CPUALL ,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - indexed + bias"},
+    {"RTJ",  o_jm6,  0x6E, CPUALL ,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - extended address"},
+    {"RTJ",  o_jm7,  0x6F, CPUALL ,0, "Return Jump, save retAaddr at effective addr and jump to the eff. addr+2 - literal"},
 
-    {"IWM",  o_m0,  0x70, CPUALL ,0, "Increment word in memory"},
-    {"IWM",  o_m1,  0x71, CPUALL ,0},
-    {"IWM",  o_m2,  0x72, CPUALL ,0},
-    {"IWM",  o_m3,  0x73, CPUALL ,0},
-    {"IWM",  o_m4,  0x74, CPUALL ,0},
-    {"IWM",  o_m5,  0x75, CPUALL ,0},
-    {"IWM",  o_m6,  0x76, CPUALL ,0},
-    {"IWM",  o_m7,  0x77, CPUALL ,0},
+    {"IWM",  o_m0,  0x70, CPUALL ,0, "Increment word in memory - direct page 0"},
+    {"IWM",  o_m1,  0x71, CPUALL ,0, "Increment word in memory - direct relative"},
+    {"IWM",  o_m2,  0x72, CPUALL ,0, "Increment word in memory - indirect page 0"},
+    {"IWM",  o_m3,  0x73, CPUALL ,0, "Increment word in memory - indirect relative"},
+    {"IWM",  o_m4,  0x74, CPU1216,0, "Increment word in memory - indexed"},
+    {"IWM",  o_m4,  0x74, CPU13xx,0, "Increment word in memory - T-index + bias (no docs)"},
+    {"IWM",  o_m5,  0x75, CPUALL ,0, "Increment word in memory - indexed + bias"},
+    {"IWM",  o_m6,  0x76, CPUALL ,0, "Increment word in memory - extended address"},
+    {"IWM",  o_m7,  0x77, CPUALL ,0, "Increment word in memory - literal"},
 
 
-    {"DWM",  o_m0,  0x78, CPUALL ,0, "Decrement word in memory"},
-    {"DWM",  o_m1,  0x79, CPUALL ,0},
-    {"DWM",  o_m2,  0x7A, CPUALL ,0},
-    {"DWM",  o_m3,  0x7B, CPUALL ,0},
-    {"DWM",  o_m4,  0x7C, CPUALL ,0},
-    {"DWM",  o_m5,  0x7D, CPUALL ,0},
-    {"DWM",  o_m6,  0x7E, CPUALL ,0},
-    {"DWM",  o_m7,  0x7F, CPUALL ,0},
+    {"DWM",  o_m0,  0x78, CPUALL ,0, "Decrement word in memory - direct page 0"},
+    {"DWM",  o_m1,  0x79, CPUALL ,0, "Decrement word in memory - direct relative"},
+    {"DWM",  o_m2,  0x7A, CPUALL ,0, "Decrement word in memory - indirect page 0"},
+    {"DWM",  o_m3,  0x7B, CPUALL ,0, "Decrement word in memory - indirect relative"},
+    {"DWM",  o_m4,  0x7C, CPU1216,0, "Decrement word in memory - indexed"},
+    {"DWM",  o_m4,  0x7C, CPU13xx,0, "Decrement word in memory - T-index + bias (no docs)"},
+    {"DWM",  o_m5,  0x7D, CPUALL ,0, "Decrement word in memory - indexed + bias"},
+    {"DWM",  o_m6,  0x7E, CPUALL ,0, "Decrement word in memory - extended address"},
+    {"DWM",  o_m7,  0x7F, CPUALL ,0, "Decrement word in memory - literal"},
 
-    {"LDX",  o_m0,  0x80, CPUALL ,0, "Load 16 bit word to X"},
-    {"LDX",  o_m1,  0x81, CPUALL ,0},
-    {"LDX",  o_m2,  0x82, CPUALL ,0},
-    {"LDX",  o_m3,  0x83, CPUALL ,0},
-    {"LDX",  o_m4,  0x84, CPUALL ,0},
-    {"LDX",  o_m5,  0x85, CPUALL ,0},
-    {"LDX",  o_m6,  0x86, CPUALL ,0},
-    {"LDX",  o_m7,  0x87, CPUALL ,0},
+    {"LDX",  o_m0,  0x80, CPUALL ,0, "Load 16 bit word to X - direct page 0"},
+    {"LDX",  o_m1,  0x81, CPUALL ,0, "Load 16 bit word to X - direct relative"},
+    {"LDX",  o_m2,  0x82, CPUALL ,0, "Load 16 bit word to X - indirect page 0"},
+    {"LDX",  o_m3,  0x83, CPUALL ,0, "Load 16 bit word to X - indirect relative"},
+    {"LDX",  o_m4,  0x84, CPU1216,0, "Load 16 bit word to X - indexed"},
+    {"LDX",  o_m4,  0x84, CPU13xx,0, "Load 16 bit word to X - T-index + bias (no docs)"},
+    {"LDX",  o_m5,  0x85, CPUALL ,0, "Load 16 bit word to X - indexed + bias"},
+    {"LDX",  o_m6,  0x86, CPUALL ,0, "Load 16 bit word to X - extended address"},
+    {"LDX",  o_m7,  0x87, CPUALL ,0, "Load 16 bit word to X - literal"},
 
-    {"STX",  o_m0,  0x88, CPUALL ,0, "Store X to memory"},
-    {"STX",  o_m1,  0x89, CPUALL ,0},
-    {"STX",  o_m2,  0x8A, CPUALL ,0},
-    {"STX",  o_m3,  0x8B, CPUALL ,0},
-    {"STX",  o_m4,  0x8C, CPUALL ,0},
-    {"STX",  o_m5,  0x8D, CPUALL ,0},
-    {"STX",  o_m6,  0x8E, CPUALL ,0},
-    {"STX",  o_m7,  0x8F, CPUALL ,0},
+    {"STX",  o_m0,  0x88, CPUALL ,0, "Store X to memory - direct page 0"},
+    {"STX",  o_m1,  0x89, CPUALL ,0, "Store X to memory - direct relative"},
+    {"STX",  o_m2,  0x8A, CPUALL ,0, "Store X to memory - indirect page 0"},
+    {"STX",  o_m3,  0x8B, CPUALL ,0, "Store X to memory - indirect relative"},
+    {"STX",  o_m4,  0x8C, CPU1216,0, "Store X to memory - indexed"},
+    {"STX",  o_m4,  0x8C, CPU13xx,0, "Store X to memory - T-index + bias (no docs)"},
+    {"STX",  o_m5,  0x8D, CPUALL ,0, "Store X to memory - indexed + bias"},
+    {"STX",  o_m6,  0x8E, CPUALL ,0, "Store X to memory - extended address"},
+    {"STX",  o_m7,  0x8F, CPUALL ,0, "Store X to memory - literal"},
 
-    {"LDB",  o_m0,  0x90, CPUALL ,0, "Load 16 bit word to X"},
-    {"LDB",  o_m1,  0x91, CPUALL ,0},
-    {"LDB",  o_m2,  0x92, CPUALL ,0},
-    {"LDB",  o_m3,  0x93, CPUALL ,0},
-    {"LDB",  o_m4,  0x94, CPUALL ,0},
-    {"LDB",  o_m5,  0x95, CPUALL ,0},
-    {"LDB",  o_m6,  0x96, CPUALL ,0},
-    {"LDB",  o_m7,  0x97, CPUALL ,0},
+    {"LDB",  o_m0,  0x90, CPUALL ,0, "Load 16 bit word to B - direct page 0"},
+    {"LDB",  o_m1,  0x91, CPUALL ,0, "Load 16 bit word to B - direct relative"},
+    {"LDB",  o_m2,  0x92, CPUALL ,0, "Load 16 bit word to B - indirect page 0"},
+    {"LDB",  o_m3,  0x93, CPU1216,0, "Load 16 bit word to B - indirect relative"},
+    {"LDB",  o_m4,  0x94, CPU13xx,0, "Load 16 bit word to B - indexed"},
+    {"LDB",  o_m4,  0x94, CPUALL ,0, "Load 16 bit word to B - T-index + bias (no docs)"},
+    {"LDB",  o_m5,  0x95, CPUALL ,0, "Load 16 bit word to B - indexed + bias"},
+    {"LDB",  o_m6,  0x96, CPUALL ,0, "Load 16 bit word to B - extended address"},
+    {"LDB",  o_m7,  0x97, CPUALL ,0, "Load 16 bit word to B - literal"},
 
-    {"STB",  o_m0,  0x98, CPUALL ,0, "Store B to memory"},
-    {"STB",  o_m1,  0x99, CPUALL ,0},
-    {"STB",  o_m2,  0x9A, CPUALL ,0},
-    {"STB",  o_m3,  0x9B, CPUALL ,0},
-    {"STB",  o_m4,  0x9C, CPUALL ,0},
-    {"STB",  o_m5,  0x9D, CPUALL ,0},
-    {"STB",  o_m6,  0x9E, CPUALL ,0},
-    {"STB",  o_m7,  0x9F, CPUALL ,0},
+    {"STB",  o_m0,  0x98, CPUALL ,0, "Store B (16 Bit) to memory - direct page 0"},
+    {"STB",  o_m1,  0x99, CPUALL ,0, "Store B (16 Bit) to memory - direct relative"},
+    {"STB",  o_m2,  0x9A, CPUALL ,0, "Store B (16 Bit) to memory - indirect page 0"},
+    {"STB",  o_m3,  0x9B, CPUALL ,0, "Store B (16 Bit) to memory - indirect relative"},
+    {"STB",  o_m4,  0x9C, CPU1216,0, "Store B (16 Bit) to memory - indexed"},
+    {"STB",  o_m4,  0x9C, CPU13xx,0, "Store B (16 Bit) to memory - T-index + bias (no docs)"},
+    {"STB",  o_m5,  0x9D, CPUALL ,0, "Store B (16 Bit) to memory - indexed + bias"},
+    {"STB",  o_m6,  0x9E, CPUALL ,0, "Store B (16 Bit) to memory - extended address"},
+    {"STB",  o_m7,  0x9F, CPUALL ,0, "Store B (16 Bit) to memory - literal"},
 
-    {"ADA",  o_m0,  0xA0, CPUALL ,0, "Add to A"},
-    {"ADA",  o_m1,  0xA1, CPUALL ,0},
-    {"ADA",  o_m2,  0xA2, CPUALL ,0},
-    {"ADA",  o_m3,  0xA3, CPUALL ,0},
-    {"ADA",  o_m4,  0xA4, CPUALL ,0},
-    {"ADA",  o_m5,  0xA5, CPUALL ,0},
-    {"ADA",  o_m6,  0xA6, CPUALL ,0},
-    {"ADA",  o_m7,  0xA7, CPUALL ,0},
+    {"ADA",  o_m0,  0xA0, CPUALL ,0, "Add to A - direct page 0"},
+    {"ADA",  o_m1,  0xA1, CPUALL ,0, "Add to A - direct relative"},
+    {"ADA",  o_m2,  0xA2, CPUALL ,0, "Add to A - indirect page 0"},
+    {"ADA",  o_m3,  0xA3, CPUALL ,0, "Add to A - indirect relative"},
+    {"ADA",  o_m4,  0xA4, CPU1216,0, "Add to A - indexed"},
+    {"ADA",  o_m4,  0xA4, CPU13xx,0, "Add to A - T-index + bias (no docs)"},
+    {"ADA",  o_m5,  0xA5, CPUALL ,0, "Add to A - indexed + bias"},
+    {"ADA",  o_m6,  0xA6, CPUALL ,0, "Add to A - extended address"},
+    {"ADA",  o_m7,  0xA7, CPUALL ,0, "Add to A - literal"},
 
-    {"ADV",  o_m0,  0xA8, CPUALL , 1, "Add variable to A or AB (word length)"},
-    {"ADV",  o_m1,  0xA9, CPUALL , 1},
-    {"ADV",  o_m2,  0xAA, CPUALL , 1},
-    {"ADV",  o_m3,  0xAB, CPUALL , 1},
-    {"ADV",  o_m4,  0xAC, CPUALL , 1},
-    {"ADV",  o_m5,  0xAD, CPUALL , 1},
-    {"ADV",  o_m6,  0xAE, CPUALL , 1},
-    {"ADV",  o_m7,  0xAF, CPUALL , 1},
+    {"ADV",  o_m0,  0xA8, CPUALL , 1, "Add variable length to A or AB - direct page 0"},
+    {"ADV",  o_m1,  0xA9, CPUALL , 1, "Add variable length to A or AB - direct relative"},
+    {"ADV",  o_m2,  0xAA, CPUALL , 1, "Add variable length to A or AB - indirect page 0"},
+    {"ADV",  o_m3,  0xAB, CPUALL , 1, "Add variable length to A or AB - indirect relative"},
+    {"ADV",  o_m4,  0xAC, CPU1216, 1, "Add variable length to A or AB - indexed"},
+    {"ADV",  o_m4,  0xAC, CPU13xx, 1, "Add variable length to A or AB - T-index + bias (no docs)"},
+    {"ADV",  o_m5,  0xAD, CPUALL , 1, "Add variable length to A or AB - indexed + bias"},
+    {"ADV",  o_m6,  0xAE, CPUALL , 1, "Add variable length to A or AB - extended address"},
+    {"ADV",  o_m7,  0xAF, CPUALL , 1, "Add variable length to A or AB - literal"},
 
-    {"SBA",  o_m0,  0xB0, CPUALL ,0, "Sub from A"},
-    {"SBA",  o_m1,  0xB1, CPUALL ,0},
-    {"SBA",  o_m2,  0xB2, CPUALL ,0},
-    {"SBA",  o_m3,  0xB3, CPUALL ,0},
-    {"SBA",  o_m4,  0xB4, CPUALL ,0},
-    {"SBA",  o_m5,  0xB5, CPUALL ,0},
-    {"SBA",  o_m6,  0xB6, CPUALL ,0},
-    {"SBA",  o_m7,  0xB7, CPUALL ,0},
+    {"SBA",  o_m0,  0xB0, CPUALL ,0, "Sub from A - direct page 0"},
+    {"SBA",  o_m1,  0xB1, CPUALL ,0, "Sub from A - direct relative"},
+    {"SBA",  o_m2,  0xB2, CPUALL ,0, "Sub from A - indirect page 0"},
+    {"SBA",  o_m3,  0xB3, CPUALL ,0, "Sub from A - indirect relative"},
+    {"SBA",  o_m4,  0xB4, CPU1216,0, "Sub from A - indexed"},
+    {"SBA",  o_m4,  0xB4, CPU13xx,0, "Sub from A - T-index + bias (no docs)"},
+    {"SBA",  o_m5,  0xB5, CPUALL ,0, "Sub from A - indexed + bias"},
+    {"SBA",  o_m6,  0xB6, CPUALL ,0, "Sub from A - extended address"},
+    {"SBA",  o_m7,  0xB7, CPUALL ,0, "Sub from A - literal"},
 
-    {"SBV",  o_m0,  0xB8, CPUALL , 1, "Sub variable from A or AB (word length)"},
-    {"SBV",  o_m1,  0xB9, CPUALL , 1},
-    {"SBV",  o_m2,  0xBA, CPUALL , 1},
-    {"SBV",  o_m3,  0xBB, CPUALL , 1},
-    {"SBV",  o_m4,  0xBC, CPUALL , 1},
-    {"SBV",  o_m5,  0xBD, CPUALL , 1},
-    {"SBV",  o_m6,  0xBE, CPUALL , 1},
-    {"SBV",  o_m7,  0xBF, CPUALL , 1},
+    {"SBV",  o_m0,  0xB8, CPUALL , 1, "Sub variable length from A or AB - direct page 0"},
+    {"SBV",  o_m1,  0xB9, CPUALL , 1, "Sub variable length from A or AB - direct relative"},
+    {"SBV",  o_m2,  0xBA, CPUALL , 1, "Sub variable length from A or AB - indirect page 0"},
+    {"SBV",  o_m3,  0xBB, CPUALL , 1, "Sub variable length from A or AB - indirect relative"},
+    {"SBV",  o_m4,  0xBC, CPU1216, 1, "Sub variable length from A or AB - indexed"},
+    {"SBV",  o_m4,  0xBC, CPU13xx, 1, "Sub variable length from A or AB - T-index + bias (no docs)"},
+    {"SBV",  o_m5,  0xBD, CPUALL , 1, "Sub variable length from A or AB - indexed + bias"},
+    {"SBV",  o_m6,  0xBE, CPUALL , 1, "Sub variable length from A or AB - extended address"},
+    {"SBV",  o_m7,  0xBF, CPUALL , 1, "Sub variable length from A or AB - literal"},
 
-    {"CPA",  o_m0,  0xC0, CPUALL ,0, "Compare A with 16 bit word"},
-    {"CPA",  o_m1,  0xC1, CPUALL ,0},
-    {"CPA",  o_m2,  0xC2, CPUALL ,0},
-    {"CPA",  o_m3,  0xC3, CPUALL ,0},
-    {"CPA",  o_m4,  0xC4, CPUALL ,0},
-    {"CPA",  o_m5,  0xC5, CPUALL ,0},
-    {"CPA",  o_m6,  0xC6, CPUALL ,0},
-    {"CPA",  o_m7,  0xC7, CPUALL ,0},
+    {"CPA",  o_m0,  0xC0, CPUALL ,0, "Compare A with 16 bit word - direct page 0"},
+    {"CPA",  o_m1,  0xC1, CPUALL ,0, "Compare A with 16 bit word - direct relative"},
+    {"CPA",  o_m2,  0xC2, CPUALL ,0, "Compare A with 16 bit word - indirect page 0"},
+    {"CPA",  o_m3,  0xC3, CPUALL ,0, "Compare A with 16 bit word - indirect relative"},
+    {"CPA",  o_m4,  0xC4, CPU1216,0, "Compare A with 16 bit word - indexed"},
+    {"CPA",  o_m4,  0xC4, CPU13xx,0, "Compare A with 16 bit word - T-index + bias (no docs)"},
+    {"CPA",  o_m5,  0xC5, CPUALL ,0, "Compare A with 16 bit word - indexed + bias"},
+    {"CPA",  o_m6,  0xC6, CPUALL ,0, "Compare A with 16 bit word - extended address"},
+    {"CPA",  o_m7,  0xC7, CPUALL ,0, "Compare A with 16 bit word - literal"},
 
-    {"CPV",  o_m0,  0xC8, CPUALL , 1, "Compare A or AB with given data (variable length)"},
-    {"CPV",  o_m1,  0xC9, CPUALL , 1},
-    {"CPV",  o_m2,  0xCA, CPUALL , 1},
-    {"CPV",  o_m3,  0xCB, CPUALL , 1},
-    {"CPV",  o_m4,  0xCC, CPUALL , 1},
-    {"CPV",  o_m5,  0xCD, CPUALL , 1},
-    {"CPV",  o_m6,  0xCE, CPUALL , 1},
-    {"CPV",  o_m7,  0xCF, CPUALL , 1},
+    {"CPV",  o_m0,  0xC8, CPUALL , 1, "Compare A or AB with given data (variable length) - direct page 0"},
+    {"CPV",  o_m1,  0xC9, CPUALL , 1, "Compare A or AB with given data (variable length) - direct relative"},
+    {"CPV",  o_m2,  0xCA, CPUALL , 1, "Compare A or AB with given data (variable length) - indirect page 0"},
+    {"CPV",  o_m3,  0xCB, CPUALL , 1, "Compare A or AB with given data (variable length) - indirect relative"},
+    {"CPV",  o_m4,  0xCC, CPUALL , 1, "Compare A or AB with given data (variable length) - indexed"},
+    {"CPV",  o_m4,  0xCC, CPU1216, 1, "Compare A or AB with given data (variable length) - T-index + bias (no docs)"},
+    {"CPV",  o_m5,  0xCD, CPU13xx, 1, "Compare A or AB with given data (variable length) - indexed + bias"},
+    {"CPV",  o_m6,  0xCE, CPUALL , 1, "Compare A or AB with given data (variable length) - extended address"},
+    {"CPV",  o_m7,  0xCF, CPUALL , 1, "Compare A or AB with given data (variable length) - literal"},
 
-    {"ANA",  o_m0,  0xD0, CPUALL ,0, "16 Bit AND"},
-    {"ANA",  o_m1,  0xD1, CPUALL ,0},
-    {"ANA",  o_m2,  0xD2, CPUALL ,0},
-    {"ANA",  o_m3,  0xD3, CPUALL ,0},
-    {"ANA",  o_m4,  0xD4, CPUALL ,0},
-    {"ANA",  o_m5,  0xD5, CPUALL ,0},
-    {"ANA",  o_m6,  0xD6, CPUALL ,0},
-    {"ANA",  o_m7,  0xD7, CPUALL ,0},
+    {"ANA",  o_m0,  0xD0, CPUALL ,0, "16 Bit AND - direct page 0"},
+    {"ANA",  o_m1,  0xD1, CPUALL ,0, "16 Bit AND - direct relative"},
+    {"ANA",  o_m2,  0xD2, CPUALL ,0, "16 Bit AND - indirect page 0"},
+    {"ANA",  o_m3,  0xD3, CPUALL ,0, "16 Bit AND - indirect relative"},
+    {"ANA",  o_m4,  0xD4, CPU1216,0, "16 Bit AND - indexed"},
+    {"ANA",  o_m4,  0xD4, CPU13xx,0, "16 Bit AND - T-index + bias (no docs)"},
+    {"ANA",  o_m5,  0xD5, CPUALL ,0, "16 Bit AND - indexed + bias"},
+    {"ANA",  o_m6,  0xD6, CPUALL ,0, "16 Bit AND - extended address"},
+    {"ANA",  o_m7,  0xD7, CPUALL ,0, "16 Bit AND - literal"},
 
-    {"ANV",  o_m0,  0xD8, CPUALL , 1, "A or AB, AND variable length"},
-    {"ANV",  o_m1,  0xD9, CPUALL , 1},
-    {"ANV",  o_m2,  0xDA, CPUALL , 1},
-    {"ANV",  o_m3,  0xDB, CPUALL , 1},
-    {"ANV",  o_m4,  0xDC, CPUALL , 1},
-    {"ANV",  o_m5,  0xDD, CPUALL , 1},
-    {"ANV",  o_m6,  0xDE, CPUALL , 1},
-    {"ANV",  o_m7,  0xDF, CPUALL , 1},
+    {"ANV",  o_m0,  0xD8, CPUALL , 1, "A or AB, AND variable length - direct page 0"},
+    {"ANV",  o_m1,  0xD9, CPUALL , 1, "A or AB, AND variable length - direct relative"},
+    {"ANV",  o_m2,  0xDA, CPUALL , 1, "A or AB, AND variable length - indirect page 0"},
+    {"ANV",  o_m3,  0xDB, CPUALL , 1, "A or AB, AND variable length - indirect relative"},
+    {"ANV",  o_m4,  0xDC, CPU1216, 1, "A or AB, AND variable length - indexed"},
+    {"ANV",  o_m4,  0xDC, CPU13xx, 1, "A or AB, AND variable length - T-index + bias (no docs)"},
+    {"ANV",  o_m5,  0xDD, CPUALL , 1, "A or AB, AND variable length - indexed + bias"},
+    {"ANV",  o_m6,  0xDE, CPUALL , 1, "A or AB, AND variable length - extended address"},
+    {"ANV",  o_m7,  0xDF, CPUALL , 1, "A or AB, AND variable length - literal"},
 
-    {"LDA",  o_m0,  0xE0, CPUALL ,0, "Load 16 bit into A"},
-    {"LDA",  o_m1,  0xE1, CPUALL ,0},
-    {"LDA",  o_m2,  0xE2, CPUALL ,0},
-    {"LDA",  o_m3,  0xE3, CPUALL ,0},
-    {"LDA",  o_m4,  0xE4, CPUALL ,0},
-    {"LDA",  o_m5,  0xE5, CPUALL ,0},
-    {"LDA",  o_m6,  0xE6, CPUALL ,0},
-    {"LDA",  o_m7,  0xE7, CPUALL ,0},
+    {"LDA",  o_m0,  0xE0, CPUALL ,0, "Load 16 bit into A - direct page 0"},
+    {"LDA",  o_m1,  0xE1, CPUALL ,0, "Load 16 bit into A - direct relative"},
+    {"LDA",  o_m2,  0xE2, CPUALL ,0, "Load 16 bit into A - indirect page 0"},
+    {"LDA",  o_m3,  0xE3, CPUALL ,0, "Load 16 bit into A - indirect relative"},
+    {"LDA",  o_m4,  0xE4, CPU1216,0, "Load 16 bit into A - indexed"},
+    {"LDA",  o_m4,  0xE4, CPU13xx,0, "Load 16 bit into A - T-Base indexed+bias"},
+    {"LDA",  o_m5,  0xE5, CPUALL ,0, "Load 16 bit into A - indexed+bias"},
+    {"LDA",  o_m6,  0xE6, CPUALL ,0, "Load 16 bit into A - extended address"},
+    {"LDA",  o_m7,  0xE7, CPUALL ,0, "Load 16 bit into A - literal"},
 
-    {"LDV",  o_m0,  0xE8, CPUALL , 1, "load variable length into A or AB"},
-    {"LDV",  o_m1,  0xE9, CPUALL , 1},
-    {"LDV",  o_m2,  0xEA, CPUALL , 1},
-    {"LDV",  o_m3,  0xEB, CPUALL , 1},
-    {"LDV",  o_m4,  0xEC, CPUALL , 1},
-    {"LDV",  o_m5,  0xED, CPUALL , 1},
-    {"LDV",  o_m6,  0xEE, CPUALL , 1},
-    {"LDV",  o_m7,  0xEF, CPUALL , 1},
+    {"LDV",  o_m0,  0xE8, CPUALL , 1, "load variable length into A or AB - Direct page 0"},
+    {"LDV",  o_m1,  0xE9, CPUALL , 1, "load variable length into A or AB - Direct relative"},
+    {"LDV",  o_m2,  0xEA, CPUALL , 1, "load variable length into A or AB - Indirect page 0"},
+    {"LDV",  o_m3,  0xEB, CPUALL , 1, "load variable length into A or AB - Indirect relative"},
+    {"LDV",  o_m4,  0xEC, CPU1216, 1, "load variable length into A or AB - Indexed"},
+    {"LDV",  o_m4,  0xEC, CPU13xx, 1, "load variable length into A or AB - T-Base indexed+bias"},
+    {"LDV",  o_m5,  0xED, CPUALL , 1, "load variable length into A or AB - Indexed+bias"},
+    {"LDV",  o_m6,  0xEE, CPUALL , 1, "load variable length into A or AB - Extended address"},
+    {"LDV",  o_m7,  0xEF, CPUALL , 1, "load variable length into A or AB - Literal"},
 
-    {"STA",  o_m0,  0xF0, CPUALL ,0, "Save A (16 bit) to given address"},
-    {"STA",  o_m1,  0xF1, CPUALL ,0},
-    {"STA",  o_m2,  0xF2, CPUALL ,0},
-    {"STA",  o_m3,  0xF3, CPUALL ,0},
-    {"STA",  o_m4,  0xF4, CPUALL ,0},
-    {"STA",  o_m5,  0xF5, CPUALL ,0},
-    {"STA",  o_m6,  0xF6, CPUALL ,0},
-    {"STA",  o_m7,  0xF7, CPUALL ,0},
+    {"STA",  o_m0,  0xF0, CPUALL ,0, "Save A (16 bit) to given address - direct page 0"},
+    {"STA",  o_m1,  0xF1, CPUALL ,0, "Save A (16 bit) to given address - direct relative"},
+    {"STA",  o_m2,  0xF2, CPUALL ,0, "Save A (16 bit) to given address - indirect page 0"},
+    {"STA",  o_m3,  0xF3, CPUALL ,0, "Save A (16 bit) to given address - indirect relative"},
+    {"STA",  o_m4,  0xF4, CPU1216,0, "Save A (16 bit) to given address - indexed"},
+    {"STA",  o_m4,  0xF4, CPU13xx,0, "Save A (16 bit) to given address - T-Base indexed+bias (no docs)"},
+    {"STA",  o_m5,  0xF5, CPUALL ,0, "Save A (16 bit) to given address - indexed+bias"},
+    {"STA",  o_m6,  0xF6, CPUALL ,0, "Save A (16 bit) to given address - extended address"},
+    {"STA",  o_m7,  0xF7, CPUALL ,0, "Save A (16 bit) to given address - literal"},
 
-    {"STV",  o_m0,  0xF8, CPUALL ,0, "Store variable A or AB to given address"},
-    {"STV",  o_m1,  0xF9, CPUALL ,0},
-    {"STV",  o_m2,  0xFA, CPUALL ,0},
-    {"STV",  o_m3,  0xFB, CPUALL ,0},
-    {"STV",  o_m4,  0xFC, CPUALL ,0},
-    {"STV",  o_m5,  0xFD, CPUALL ,0},
-    {"STV",  o_m6,  0xFE, CPUALL ,0},
-    {"STV",  o_m7,  0xFF, CPUALL ,0},
+    {"STV",  o_m0,  0xF8, CPUALL ,0, "Store variable A or AB to given address - direct page 0"},
+    {"STV",  o_m1,  0xF9, CPUALL ,0, "Store variable A or AB to given address - direct relative"},
+    {"STV",  o_m2,  0xFA, CPUALL ,0, "Store variable A or AB to given address - indirect page 0"},
+    {"STV",  o_m3,  0xFB, CPUALL ,0, "Store variable A or AB to given address - indirect relative"},
+    {"STV",  o_m4,  0xFC, CPU1216,0, "Store variable A or AB to given address - indexed"},
+    {"STV",  o_m4,  0xFC, CPU13xx,0, "Store variable A or AB to given address - T-Base indexed+bias (no docs)"},
+    {"STV",  o_m5,  0xFD, CPUALL ,0, "Store variable A or AB to given address - indexed+bias"},
+    {"STV",  o_m6,  0xFE, CPUALL ,0, "Store variable A or AB to given address - extended address"},
+    {"STV",  o_m7,  0xFF, CPUALL ,0, "Store variable A or AB to given address - literal"},
     {""}};
 
 // -------------------------------------------------------------------
@@ -549,24 +585,61 @@ dataSpec_t* findDataSpec(uint16_t addr) {
 	return NULL;
 }
 
+void labelAdd (uint16_t addr, char *name, char *comment) {
+	label_t *l;
+
+	if (!labels) {
+		labels = calloc(1,sizeof(label_t));
+		l = labels;
+	} else {
+		l = labels;
+		while (l->next) {
+			if (l->addr == addr) return;
+			l = l->next;
+		}
+		if (l->addr == addr) return;
+		l->next = calloc(1,sizeof(label_t));
+		l = l->next;
+	}
+	l->addr = addr;
+	if (name) l->name = strdup(name);
+	else {
+		char lab[10];
+		sprintf(lab,"L%04x",addr);
+		l->name = strdup(lab);
+	}
+	if (comment) l->comment = strdup(comment);
+}
+
+label_t* findLabel(uint16_t addr) {
+	label_t *l = labels;
+
+	while (l) {
+		if (addr == l->addr) return l;
+		l = l->next;
+	}
+	return NULL;
+}
+
 
 #define fmtBF  0
 #define fmtBin 1
 
 int inputFmt = fmtBF;
-int org = 0;
-uint16_t currAddr = 0;
+int org;
+int codeAddrMax;
+uint16_t currAddr;
 FILE *inFile;
 int atEof;
-int errors = 0;
+int errors;
 unsigned char currByte;
 int nextIsOrg;
 char prefix[255],command[255],params[255],comment[255];
 int currWordLength = 1;
 int comments = 1;
-int linesOut = 0;
-int oldFmt = 0;
-int assemblerOut = 0;
+int linesOut;
+int oldFmt;
+int assemblerOut;
 
 
 void strupper (char * s) {
@@ -591,17 +664,19 @@ void usage (char *prgName) {
       " --old           old opcode format\n" \
       " -a\n" \
       " --asmout        omit address and hexdump of command\n" \
-      " -d --data       addr(hex),numBytes(hex)[,comment] specify data\n" \
+      " -d --data       addr(hex),numBytes(hex)[,comment] - specify data\n" \
+      " -L --label      addr(hex),label[,comment] - add label\n" \
       " -M --cpumd      Microdata 800/1600 CPU\n" \
       " -B --cpu1200    Basic Four 1200 CPU (default)\n" \
       " -C --cpu1300    Basic Four 1300 CPU\n" \
       " -D --cpu1320    Basic Four 1320 CPU\n" \
-      "\n"
-      "Basic four console boot file is an ascii file with upper case hex chars. Lines are\n"
-      "terminated with 0x1f. First four bytes of a line is the 16 bit target address. A line\n"
+      "\n" \
+      "Basic four console boot file is an ascii file with upper case hex chars. Lines are\n" \
+      "terminated with 0x1f. First four bytes of a line is the 16 bit target address. A line\n" \
       "with a target address only starts execution at target address.\n" \
-      "Disassembly for variable opcodes (e.g. LDV) will fail if the code used diffetent\n"
+      "Disassembly for variable opcodes (e.g. LDV) will fail if the code used diffetent\n" \
       "word lengths since the opcode is the same and the word length can be set in code.\n" \
+      "Labels will be read from file if a file named inputFileName.labels is present.\n"
 
       ,prgName);
     _exit (1);
@@ -755,18 +830,29 @@ void processData(dataSpec_t* d) {
 	}
 }
 
+#define P1 if(pass)
+#define P0 if(!pass)
 
-void processOpcode() {
+void processOpcode(int pass) {
     int typ;
     int wordLength;
-    int param,param2,param1;
+    int param,param2,param1,absAddr;
     char cmd;
     int8_t relOfs;
     char stmp[20];
-    char addrInfo[20];
+    char addrInfo[40];
     int nextOpcode;
     struct OpcdRec currOpc;
     int i;
+    char *labelName = NULL;
+    char *labelComment = NULL;
+    label_t *label = findLabel(currAddr);	// may be we have a label (for assembler out)
+
+    if (label && assemblerOut) {
+		labelName = label->name;
+		labelComment = label->comment;
+    }
+    label = NULL;
 
     addrInfo[0] = 0;
     params[0] = 0;
@@ -839,214 +925,329 @@ void processOpcode() {
 		case o_None:         // No operands
           break;
         case o_BraRel:       // short branch
-          relOfs = geti8();
-          sprintf(params,"%04xH",currAddr+relOfs);
-          sprintf(addrInfo," (ofs: %d=0x%02x)",relOfs,relOfs);
-          break;
+			relOfs = geti8();
+			P0 labelAdd(currAddr+relOfs,NULL,NULL);
+			P1 {
+				if (assemblerOut) label = findLabel(currAddr+relOfs);
+				if (assemblerOut && label)
+					sprintf(params,label->name);
+				else {
+					sprintf(params,"%04xH",currAddr+relOfs);
+					strupper(params);
+				}
+				sprintf(addrInfo," (ofs: %d=0x%02x, abs: 0x%04x)",relOfs,relOfs,currAddr+relOfs);
+			}
+			break;
         case o_Bra16:        // long branch
-          param = get16();
-          sprintf(params,"%04xH",param);
-          break;
+			param = get16();
+			sprintf(params,"%04xH",param);
+			strupper(params);
+			break;
         case o_Imm8:         // one byte as parameter
-          param = get8();
-          if (param < 0x0a)
-            sprintf(params,"%d",param);
-          else
-            sprintf(params,"%02xH",param);
-          break;
+			param = get8();
+			if (param < 0x0a)
+				sprintf(params,"%d",param);
+			else
+				sprintf(params,"%02xH",param);
+			strupper(params);
+			break;
         case o_Imm16:        // two bytes as parameter
-          param = get16();
-          sprintf(params,"%04xH",param);
-          break;
+			param = get16();
+			sprintf(params,"%04xH",param);
+			strupper(params);
+			break;
         case o_m0:           // m=0: 8 bit addr in page 0
-          param = get8();
-          if (oldFmt)
-            sprintf(params,"%02xH",param);
-          else
-            sprintf(params,"[%02xH]",param);
-          break;
+			param = get8();
+			if (oldFmt)
+				sprintf(params,"%02xH",param);
+			else
+				sprintf(params,"[%02xH]",param);
+			strupper(params);
+			break;
         case o_jm0:           // m=0: 8 bit addr in page 0
-          param = get8();
-          if (oldFmt)
-            sprintf(params,"X'%02x'",param);
-          else
-            sprintf(params,"SHORT %02xH",param);
-          break;
+			param = get8();
+			if (assemblerOut) label = findLabel(param);
+			if (assemblerOut && label) {
+				sprintf(params,"%s",label->name);
+			} else {
+				if (oldFmt)
+					sprintf(params,"X'%02x'",param);
+				else
+					sprintf(params,"SHORT %02xH",param);
+				strupper(params);
+			}
+			break;
         case o_m1:           // m=1: relative 8 bit
-          relOfs = geti8();
-          if (oldFmt) {
-            sprintf(params,"X'%04x'",currAddr+relOfs);
-          } else {
-            sprintf(params,"SHORT [%04xh]",currAddr+relOfs/*-2*/);
-          }
-		  sprintf(addrInfo," (ofs: %d=0x%02x)",relOfs,relOfs);
-          break;
+			relOfs = geti8();
+			absAddr = currAddr+relOfs;
+			P0 labelAdd(absAddr,NULL,NULL);
+			P1 {
+				if (assemblerOut) label = findLabel(absAddr);
+				if (assemblerOut && label) {
+					sprintf(params,"SHORT [%s]",label->name);
+				} else {
+					if (oldFmt) {
+						sprintf(params,"X'%04x'",absAddr);
+					} else {
+						sprintf(params,"SHORT [%04xh]",absAddr);
+					}
+					strupper(params);
+				}
+				sprintf(addrInfo," (ofs: %d=0x%02x, abs: 0x%04x)",relOfs,relOfs,absAddr);
+			}
+			break;
         case o_jm1:           // m=1: relative 8 bit
-          relOfs = geti8();
-          if (oldFmt) {
-            sprintf(params,"X'%04x'",currAddr+relOfs/*-2*/);
-          } else
-            sprintf(params,"SHORT %04xH",currAddr+relOfs/*-2*/);
-          sprintf(addrInfo," (ofs: %d=0x%02x)",relOfs,relOfs);
-          break;
+			relOfs = geti8();
+			absAddr = currAddr+relOfs;
+			P0 labelAdd(absAddr,NULL,NULL);
+			P1 {
+				if (assemblerOut) label = findLabel(absAddr);
+				if (assemblerOut && label) {
+					sprintf(params,"SHORT %s",label->name);
+				} else {
+					if (oldFmt) {
+						sprintf(params,"X'%04x'",absAddr);
+					} else
+						sprintf(params,"SHORT %04xH",absAddr);
+					strupper(params);
+				}
+				sprintf(addrInfo," (ofs: %d=0x%02x, abs: 0x%04x)",relOfs,relOfs,absAddr);
+			}
+			break;
         case o_m2:           // m=2: indirect page 0
-          //strcat(command,"'");
-          param = get8();
-          if (oldFmt) {
-			strcat(command,"'");
-            sprintf(params,"%02x",param);
-          } else
-            sprintf(params,"[*%02xH]",param);
-          break;
+			param = get8();
+			P0 labelAdd(param,NULL,NULL);
+			P1 {
+				if (assemblerOut) label = findLabel(param);
+				if (assemblerOut && label) {
+					if (oldFmt) {
+						strcat(command,"'");
+						sprintf(params,"%s",label->name);
+					} else
+						sprintf(params,"[*%s]",label->name);
+				} else {
+					if (oldFmt) {
+						strcat(command,"'");
+						sprintf(params,"%02x",param);
+					} else
+						sprintf(params,"[*%02xH]",param);
+					strupper(params);
+				}
+			}
+			break;
         case o_jm2:           // m=2: indirect page 0
-          param = get8();
-          sprintf(params,"[%02xH]",param);
-          break;
+			param = get8();
+			P0 labelAdd(param,NULL,NULL);
+			P1 {
+				if (assemblerOut) label = findLabel(param);
+				if (assemblerOut && label)
+					sprintf(params,"[%s]",label->name);
+				else {
+					sprintf(params,"[%02xH]",param);
+					strupper(params);
+				}
+			}
+			break;
         case o_m3:           // m=3: indirect relative
-          relOfs = geti8();
-          if (oldFmt) {
-			strcat(command,"*");
-            sprintf(params,"X'%04x'",currAddr+relOfs);
-          } else
-            sprintf(params,"[*%04xH]",currAddr+relOfs/*-2*/);
-          sprintf(addrInfo," (ofs: %d=0x%02x)",relOfs,relOfs);
-          break;
+			relOfs = geti8();
+			absAddr = currAddr+relOfs;
+			P0 labelAdd(absAddr,NULL,NULL);
+			P1 {
+				if (assemblerOut) label = findLabel(absAddr);
+				if (assemblerOut && label) {
+					if (oldFmt) {
+						strcat(command,"*");
+						sprintf(params,"%s",label->name);
+					} else
+						sprintf(params,"[*%s]",label->name);
+				} else {
+					if (oldFmt) {
+						strcat(command,"*");
+						sprintf(params,"X'%04x'",absAddr);
+					} else
+						sprintf(params,"[*%04xH]",absAddr);
+					strupper(params);
+				}
+				sprintf(addrInfo," (ofs: %d=0x%02x, abs: 0x%04x)",relOfs,relOfs,absAddr);
+			}
+			break;
         case o_jm3:           // m=3: indirect relative
-          relOfs = geti8();
-          if (oldFmt) {
-            strcat(command,"*");
-            sprintf(params,"X'%04x'",currAddr+relOfs);
-          } else
-            sprintf(params,"[%04xH]",currAddr+relOfs/*-2*/);
-          sprintf(addrInfo," (ofs: %d=0x%02x)",relOfs,relOfs);
-          break;
+			relOfs = geti8();
+			absAddr = currAddr+relOfs;
+			P0 labelAdd(absAddr,NULL,NULL);
+			P1 {
+				if (assemblerOut) label = findLabel(absAddr);
+				if (assemblerOut && label) {
+					if (oldFmt) {
+						strcat(command,"*");
+						sprintf(params,"%s",label->name);
+					} else
+						sprintf(params,"[%s]",label->name);
+				} else {
+					if (oldFmt) {
+						strcat(command,"*");
+						sprintf(params,"X'%04x'",absAddr);
+					} else
+						sprintf(params,"[%04xH]",absAddr);
+					strupper(params);
+				}
+				sprintf(addrInfo," (ofs: %d=0x%02x, abs: 0x%04x)",relOfs,relOfs,absAddr);
+			}
+			break;
         case o_m4:           // m=4: indexed
-          if (oldFmt)
-            strcat(command,"-");
-          else
-            strcpy(params,"[X]");
-          break;
+			if (oldFmt)
+				strcat(command,"-");
+			else
+				strcpy(params,"[X]");
+			break;
         case o_jm4:           // m=4: indexed
-          if (oldFmt)
-            strcat(command,"-");
-          else
-            strcpy(params,"X");
-          break;
+			if (oldFmt)
+				strcat(command,"-");
+			else
+				strcpy(params,"X");
+			break;
         case o_m5:           // m=5: indexed with bias
-          param = get8();
-          if (oldFmt) {
-			strcat(command,"+");
-            sprintf(params,"X'%02x'",param);
-          } else
-            sprintf(params,"[X+%02xH]",param);
-          break;
+			param = get8();
+			if (oldFmt) {
+				strcat(command,"+");
+				sprintf(params,"X'%02x'",param);
+			} else
+				sprintf(params,"[X+%02xH]",param);
+            strupper(params);
+			break;
         case o_jm5:           // m=5: indexed with bias
-          param = get8();
-          if (oldFmt) {
-			strcat(command,"+");
-			sprintf(params,"X'%02x'",param);
-		  } else
-            sprintf(params,"X+%02xH",param);
-          break;
+			param = get8();
+			if (oldFmt) {
+				strcat(command,"+");
+				sprintf(params,"X'%02x'",param);
+			} else
+				sprintf(params,"X+%02xH",param);
+			strupper(params);
+			break;
         case o_m6:           // m=6: extended address
-          param = get16();
-          if (oldFmt) {
-            strcat(command,"/");
-            sprintf(params,"X'%04x'",param);
-          } else {
-            sprintf(params,"[%04xH]",param);
-          }
-          break;
-        case o_jm6:           // m=6: extended address
-          param = get16();
-          if (oldFmt) {
-            strcat(command,"/");
-            sprintf(params,"X'%04x'",param);
-          } else {
-            if (param & 0x8000)
-              sprintf(params,"X+%04xH",param & 0x7fff);
-            else
-              sprintf(params,"%04xH",param);
-          }
-          break;
-        case o_m7:           // m=7: indirect extended address
-        case o_jm7:
-          if (oldFmt)
-            strcat(command,"=");
-          param = cmd & 0xf8;  // mask out m0..7
-          if ((param == OP_JMP) | (param == OP_RETJMP)) {
-              param = get16();
-              if (oldFmt) {
+			param = get16();
+			if (oldFmt) {
 				strcat(command,"/");
 				sprintf(params,"X'%04x'",param);
-			  } else
-              if (param & 0x8000) {  // bit7 = X+
-                  sprintf(params,"[X+%04xH]",param & 0x7fff);
-              } else {
-                  sprintf(params,"[%04xH]",param);
-              }
-          } else {
-              wordLength = 2;  // default to 2 byte for opcodes without "varlen" flag
-              if (currOpc.varlen)
-                  // this may be 1,2,3 or 4 byte and depends on the word lenth set
-                  wordLength = currWordLength;
-              switch (wordLength) {
-                case 1:
-                  param = get8();
-                  if (oldFmt) sprintf(params,"X'%02x'",param);
-                  else sprintf(params,"%02xH",param);
-                  break;
-                case 2:
-                  param = get16();
-                  if (oldFmt) sprintf(params,"X'%04x'",param);
-                  else sprintf(params,"%04xH",param);
-                  break;
-                case 3:
-                  param = get16(); param2 = get8();
-                  if (oldFmt) sprintf(params,"X'%04x%02x'",param,param2);
-                  else sprintf(params,"%04x%02xH",param,param2);
-                  break;
-                case 4:
-                  param = get16(); param2 = get16();
-                  if (oldFmt) sprintf(params,"X'%08x'",param);
-                  else sprintf(params,"%04x%04xH",param,param2);
-                  break;
-              }
-          }
-          break;
+			} else {
+				sprintf(params,"[%04xH]",param);
+			}
+			strupper(params);
+			break;
+		case o_jm6:           // m=6: extended address
+			param = get16();
+			if (oldFmt) {
+				strcat(command,"/");
+				sprintf(params,"X'%04x'",param);
+			} else {
+			if (param & 0x8000)
+				sprintf(params,"X+%04xH",param & 0x7fff);
+			else
+				sprintf(params,"%04xH",param);
+			}
+			strupper(params);
+			break;
+        case o_m7:           // m=7: indirect extended address
+        case o_jm7:
+			if (oldFmt)
+				strcat(command,"=");
+			param = cmd & 0xf8;  // mask out m0..7
+			if ((param == OP_JMP) | (param == OP_RETJMP)) {
+				param = get16();
+				if (oldFmt) {
+					strcat(command,"/");
+					sprintf(params,"X'%04x'",param);
+				} else
+				if (param & 0x8000) {  // bit7 = X+
+					sprintf(params,"[X+%04xH]",param & 0x7fff);
+				} else {
+					sprintf(params,"[%04xH]",param);
+				}
+			} else {
+				wordLength = 2;  // default to 2 byte for opcodes without "varlen" flag
+				if (currOpc.varlen)
+					// this may be 1,2,3 or 4 byte and depends on the word lenth set
+					wordLength = currWordLength;
+				switch (wordLength) {
+					case 1:
+						param = get8();
+						if (oldFmt) sprintf(params,"X'%02x'",param);
+						else sprintf(params,"%02xH",param);
+						break;
+					case 2:
+						param = get16();
+						if (oldFmt) sprintf(params,"X'%04x'",param);
+						else sprintf(params,"%04xH",param);
+						break;
+					case 3:
+						param = get16(); param2 = get8();
+						if (oldFmt) sprintf(params,"X'%04x%02x'",param,param2);
+						else sprintf(params,"%04x%02xH",param,param2);
+						break;
+					case 4:
+						param = get16(); param2 = get16();
+						if (oldFmt) sprintf(params,"X'%08x'",param);
+						else sprintf(params,"%04x%04xH",param,param2);
+						break;
+				}
+			}
+			strupper(params);
+			break;
         case o_IBM_OBM:
-          param = get8();
-          param2 = get16();
-              if (param & 0x8000) {  // bit7 = X+
-                  sprintf(params,"%0x02,[X+%04xH]",param,param2 && 0x7fff);
-              } else {
-                  sprintf(params,"%0x02,[%04xH]",param,param2);
-              }
-          break;
+			param = get8();
+			param2 = get16();
+			if (param & 0x8000) {  // bit7 = X+
+				sprintf(params,"%0x02,[X+%04xH]",param,param2 && 0x7fff);
+			} else {
+				sprintf(params,"%0x02,[%04xH]",param,param2);
+			}
+			strupper(params);
+			break;
         case o_inout:
-          param = get8();
-          if (cpu != CPU1600) { // AD 15.10.2025: looks like basic four is using 4 bit function code and 4 bit device address
+			param = get8();
+			if (cpu & CPU13xx) { // AD 16.10.2025: looks like basic four 13xx is using 4 bit function code and 4 bit device address
 				param2 = (param & 0xf0) >> 4;
 				param1 = param & 0x0f;
-          } else {
+			} else {
 				param2 = (param & 0xe0) >> 5;
 				param1 = param & 0x1f;
-          }
-          if (oldFmt) {
-			  sprintf(params,"X'%02x',X'%02x'",param2,param1);
-		  } else {
-			  sprintf(params,"%02xH,%02xH",param2,param1);
-          }
-          sprintf(addrInfo," (0x%02x)",param);
-          break;
+			}
+			if (oldFmt) {
+				sprintf(params,"X'%02x',X'%02x'",param2,param1);
+			} else {
+				sprintf(params,"%02xH,%02xH",param2,param1);
+			}
+			sprintf(addrInfo," (0x%02x)",param);
+			strupper(params);
+			break;
 
     }
-    strupper(prefix); strupper(params);
-    if (assemblerOut)
-		printf("         %-6s %-20s %s%s\n",command,params,comment,addrInfo);
-	else
-		printf("%-17s %-6s %-20s %s%s\n",prefix,command,params,comment,addrInfo);
-    linesOut++;
+    P1 {
+		strupper(prefix); //strupper(params);
+		if (assemblerOut) {
+			int statementPrinted = 0;
+			if (labelName) {
+				char* newLabelName = malloc(strlen(labelName)+2);
+				strcpy(newLabelName,labelName);
+				strcat(newLabelName,":");
+				if(strlen(labelName) > 7 || labelComment) {
+					if (labelComment)
+						printf("%s                               ; %s\n",newLabelName,labelComment);
+					else
+						printf("%s\n",newLabelName);
+				} else {
+					printf("%-9s%-6s %-20s %s%s\n",newLabelName,command,params,comment,addrInfo);
+					statementPrinted++;
+				}
+				free(newLabelName);
+			}
+			if (!statementPrinted) printf("         %-6s %-20s %s%s\n",command,params,comment,addrInfo);
+		} else {
+			printf("%-17s %-6s %-20s %s%s\n",prefix,command,params,comment,addrInfo);
+		}
+		linesOut++;
+    }
+    if (currAddr > codeAddrMax) codeAddrMax = currAddr;
 }
 
 
@@ -1080,7 +1281,7 @@ char skipEmptyLines(void) {
 }
 
 
-void processFile(char *fileName) {
+void processFile(char *fileName, int pass) {
     char orgAddr[9];
     int firstAddr = 1;
 
@@ -1114,8 +1315,8 @@ void processFile(char *fileName) {
               //printf("org %04x\n",org);
               if (firstAddr) {
 				  if (assemblerOut) {
-					  printf(" .CPU %s\n",cpuTxtA());
-					  printf(" ORG 0x%04x\n",currAddr);
+					  P1 printf(" .CPU %s\n",cpuTxtA());
+					  P1 printf(" ORG 0x%04x\n",currAddr);
 				  }
 			  }
               firstAddr = 0;
@@ -1124,7 +1325,7 @@ void processFile(char *fileName) {
          currByte = nextByte();
        //if (!((currByte == 0x1F) & (inputFmt == fmtBF)))
        if (!nextIsOrg)
-           processOpcode();
+           processOpcode(pass);
     }
     fclose(inFile);
 }
@@ -1168,11 +1369,65 @@ void parseData(char *dParam) {
 	free(src);
 }
 
+void parseLabel(char *dParam) {
+	char * src = strdup(dParam);
+	char *token;
+	int numParam = 0;
+	uint16_t addr = 0;
+	char *name = NULL;
+	char *comment = NULL;
+
+	token = strtok(src,",");
+	while (token) {
+		switch (numParam) {
+		case 0:
+			addr = strtol(token,NULL,16);	// FIXME: detect invalid hex chars
+			if(errno) {
+				fprintf(stderr,"invalid hex address in '%s'\n",dParam);
+				exit(1);
+			}
+			break;
+		case 1:
+			name = strdup(token);
+			break;
+		case 2:
+			comment = strdup(token);
+			break;
+		}
+		numParam++;
+		token = strtok(NULL,",");
+	}
+	labelAdd(addr, name, comment);
+	free(src);
+}
+
+
+#define MAX_LF_LINE_LEN 255
+void readLablesFromFile(char *fileName) {
+	char line[MAX_LF_LINE_LEN];
+	FILE *fp = fopen(fileName,"r");
+
+	if (!fp) return;
+
+    while (fgets(line, MAX_LF_LINE_LEN, fp)) {
+        // Remove trailing CR / LF
+        line[strcspn(line, "\n")] = 0;
+        line[strcspn(line, "\r")] = 0;	// for Windows files
+        if(strlen(line) >1 ) {
+        	if(line[0] != '#' && line[0] != ';')
+				parseLabel(line);
+        }
+    }
+    fclose(fp);
+}
+
+
 int main (int argc, char **argv) {
 
-  int c,index;
+  int c;
   errors = 0;
   opterr = 0;
+  char tmpStr[255];
 
   static struct option long_options[] =
   {
@@ -1187,13 +1442,14 @@ int main (int argc, char **argv) {
     {"cpu1300",   no_argument,       0, 'C'},
     {"cpu1320",   no_argument,       0, 'D'},
     {"data"   ,   required_argument, 0, 'd'},
+    {"label"  ,   required_argument, 0, 'L'},
     {0, 0, 0, 0}
   };
 
   int option_index = 0;
 
 
-  while ((c = getopt_long (argc, argv, "1234nbo:hl?aMBCDd:",long_options, &option_index)) != -1) {
+  while ((c = getopt_long (argc, argv, "1234nbo:hl?aMBCDd:L:",long_options, &option_index)) != -1) {
     switch (c)
       {
 	  case 1:
@@ -1240,6 +1496,9 @@ int main (int argc, char **argv) {
 	  case 'd':
 	  	parseData(optarg);
 		break;
+	  case 'L':
+	  	parseLabel(optarg);
+		break;
       default:
         usage(argv[0]);
       }
@@ -1258,8 +1517,6 @@ int main (int argc, char **argv) {
 		i++;
   }
 
-
-
   if (assemblerOut) putchar(';');
   printf(MYSELF,VERMAJ,VERMIN,cpuTxt());
 
@@ -1269,8 +1526,40 @@ int main (int argc, char **argv) {
 		m = m->next;
   }
 
-  for (index = optind; index < argc; index++)
-    processFile (argv[index]);
+// read labels file if present
+  char *labelsFileName = malloc(strlen(argv[optind])+8);
+  strcpy(labelsFileName,argv[optind]);
+  strcat(labelsFileName,".labels");
+  readLablesFromFile(labelsFileName);
+  free(labelsFileName);
+
+
+  processFile (argv[optind],0);		// pass 0
+  label_t* l;
+#if 0
+  l = labels;
+  while(l) {
+		printf("%04x %s '%s'\n",l->addr,l->name,l->comment);
+		l = l->next;
+  }
+  printf("\n");
+#endif
+  // mark labels not in code
+  l = labels;
+  while(l) {
+	if (l->addr < org || l->addr > codeAddrMax) {
+		l->LabelInCode = 0;
+		if (assemblerOut) {
+			printf("%s:\tEQU\t",l->name);
+			sprintf(tmpStr,"%04xH\n",l->addr);
+			printf(tmpStr);
+		}
+	} else
+		l->LabelInCode = 1;
+	l = l->next;
+  }
+
+  processFile (argv[optind],1);
   if (linesOut > 0)
     if (comments)
       if (oldFmt)

@@ -2,7 +2,7 @@
 // Microdata 821/1600/MAI Basic Four 13xx
 // Armin Diehl 09/2015
 
-#define version "1.02"
+#define version "1.32"
 #define versionNameMD "Microdata 821 and 1600 assembler " version
 #define versionNameBF "Basic Four 1200,1300 and 1320 assembler " version
 #include "asmx.h"
@@ -1025,7 +1025,7 @@ int MD1600_DoCPUOpcode(int typ, int parmIn)
             val = Eval();
             Expect(",");
             val2 = Eval();
-            if (curCPU == CPU1600) {
+            if (curCPU & CPU1216) {		// Micodata 1600 is using 3 bits for the function code
 				val = val & 0x1f;  // device only
 				val2 = (val2 & 0x07) << 5;
 				val = val | val2;

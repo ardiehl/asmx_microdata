@@ -7,10 +7,10 @@
 
 0200  04                Start:  	DIN
 0201  E0 FF             lab1:		LDA PAGE0 [ffh]		; m=0, direct page 0
-0203  E1 8D             		LDA SHORT [0x190]		; m=1
-0205  E1 FB             		LDA SHORT [Start]	; m=1, direct relative
+0203  E1 8B             		LDA SHORT [0x190]		; m=1
+0205  E1 F9             		LDA SHORT [Start]	; m=1, direct relative
 0207  E2 01             		LDA	[*1]		; m=2, indirect page 0, SHORT not needed
-0209  E3 F7             		LDA	[*Start]	; m=3, indirect relative, SHORT not needed
+0209  E3 F5             		LDA	[*Start]	; m=3, indirect relative, SHORT not needed
 020B  E4                		LDA	[X]		; m=4, indexed
 020C  E6 8012           lab2		LDA	[X+12h]		; m=5, indexed with bias
 020F  E6 7EF0           		LDA	[7ef0h]		; m=6, extended address, x=0
@@ -18,12 +18,12 @@
 0215  E7 7F91           lab3		LDA	7F91h		; m=7 literal
 
                         		; Jump and Return Jump
-0218  61 E8             lab4:		JMP	short 200h	; m=0, direct page 0
+0218  61 E6             lab4:		JMP	short 200h	; m=0, direct page 0
 021A  66 0200           		JMP	200h
-021D  61 FB             lab4_1:		JMP SHORT Lab4		; m=1, direct relative
+021D  61 F9             lab4_1:		JMP SHORT Lab4		; m=1, direct relative
                         ;		JMP SHORT TheEnd	; error
 021F  62 01             lab4_2:		JMP	[1]		; m=2, indirect page 0
-0221  63 DF             lab5:		JMP	[Start]		; m=3, indirect relative
+0221  63 DD             lab5:		JMP	[Start]		; m=3, indirect relative
 0223  64                		JMP	X		; m=4, indexed
 0224  66 8012           		JMP	X+12h		; m=5, indexed with bias
 0227  66 7EF0           lab6:		JMP	7ef0h		; m=6, extended address, x=0
@@ -51,9 +51,9 @@
                         	; old style
                         	; underscore instead of blank
 0255  60 00             		JMP_	0		; m=0
-0257  61 02             		JMP_	*+2		; m=1
+0257  61 00             		JMP_	*+2		; m=1
 0259  62 00             		JMP*	0		; m=2
-025B  63 02             		JMP*	*+2		; m=3
+025B  63 00             		JMP*	*+2		; m=3
 025D  64                		JMP-			; m=4
 025E  65 12             		JMP+	12h		; m=5
 0260  6E 1000           		RTJ/	TheEnd		; m=6
@@ -62,9 +62,9 @@
 0269  67 9000           		JMP=	TheEnd,X	; m=7, x=1
 
 026C  70 00             		IWM_	0		; m=0
-026E  79 02             		DWM_	*+2		; m=1
+026E  79 00             		DWM_	*+2		; m=1
 0270  82 00             		LDX*	0		; m=2
-0272  8B 02             		STX*	*+2		; m=3
+0272  8B 00             		STX*	*+2		; m=3
 0274  94                		LDB-			; m=4
 0275  9D 12             		STB+	12h		; m=5
 0277  A6 1000           		ADA/	TheEnd		; m=6
@@ -88,7 +88,7 @@
 
 00000 Total Error(s)
 
-LAB1               0201    LAB2               020C    LAB3               0215
-LAB4               0218    LAB4_1             021D    LAB4_2             021F
-LAB5               0221    LAB6               0227    LAB7               0230
-NXT                0235    START              0200    THEEND             1000
+LAB1               00000201    LAB2               0000020C    LAB3               00000215
+LAB4               00000218    LAB4_1             0000021D    LAB4_2             0000021F
+LAB5               00000221    LAB6               00000227    LAB7               00000230
+NXT                00000235    START              00000200    THEEND             00001000
